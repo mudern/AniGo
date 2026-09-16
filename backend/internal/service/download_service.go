@@ -1,8 +1,14 @@
 package service
 
 import (
+	"bytes"
 	"context"
+	"crypto/sha1"
+	"encoding/hex"
 	"fmt"
+	"io"
+	"net/http"
+	"net/url"
 	"regexp"
 	"sort"
 	"strings"
@@ -219,8 +225,18 @@ func (s *DownloadService) downloadAni(ctx context.Context, ani *domain.Ani, chec
 			currentDownloadCount++
 		}
 
-		// 提交离线下载（异步，115 自行转存）
-		if err := driver.AddOfflineTask(ctx, cfg, item.Torrent, savePath+"/"+reName); err != nil {
+		// 提交离线下载：如果是 .torrent URL 则转换为磁力链接
+		magnet := item.Torrent
+		if !strings.HasPrefix(magnet, "magnet:") && !strings.HasPrefix(magnet, "ed2k:") {
+			s.logf("INFO", "download", "正在转换种子为磁力链接: %s", reName)
+			var convErr error
+			magnet, convErr = torrentToMagnet(magnet, cfg)
+			if convErr != nil {
+				s.logf("ERROR", "download", "%s 转换磁力失败: %v", reName, convErr)
+				continue
+			}
+		}
+		if err := driver.AddOfflineTask(ctx, cfg, magnet, savePath+"/"+reName); err != nil {
 			s.logf("ERROR", "download", "%s 添加下载失败: %v", reName, err)
 			continue
 		}
@@ -369,4 +385,169 @@ func containsFloat(list []float64, v float64) bool {
 		}
 	}
 	return false
+}
+
+// torrentToMagnet 将 .torrent URL 转换为磁力链接。
+// 1. 下载 .torrent 文件
+// 2. 解析 bencode 提取 info 字典
+// 3. 计算 SHA1 得到 info hash
+// 4. 拼接 magnet:?xt=urn:btih: 链接
+func torrentToMagnet(torrentURL string, cfg *domain.Config) (string, error) {
+	if strings.HasPrefix(torrentURL, "magnet:") {
+		return torrentURL, nil
+	}
+
+	// 下载 .torrent 文件
+	client := &http.Client{Timeout: 30 * time.Second}
+	if cfg.Proxy && cfg.ProxyHost != "" {
+		// 使用代理
+		transport := &http.Transport{}
+		proxyURL, err := url.Parse(cfg.ProxyHost)
+		if err == nil {
+			transport.Proxy = http.ProxyURL(proxyURL)
+			client.Transport = transport
+		}
+	}
+
+	resp, err := client.Get(torrentURL)
+	if err != nil {
+		return "", fmt.Errorf("下载种子失败: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return "", fmt.Errorf("下载种子HTTP %d", resp.StatusCode)
+	}
+
+	data, err := io.ReadAll(io.LimitReader(resp.Body, 10*1024*1024)) // 限制 10MB
+	if err != nil {
+		return "", fmt.Errorf("读取种子失败: %w", err)
+	}
+
+	// 解析 info hash
+	infoHash, err := extractInfoHash(data)
+	if err != nil {
+		return "", err
+	}
+
+	return "magnet:?xt=urn:btih:" + infoHash, nil
+}
+
+// extractInfoHash 从 .torrent 文件的原始字节中提取 info hash。
+// 正确解析 bencode 格式，处理嵌套字典、列表和整数。
+func extractInfoHash(data []byte) (string, error) {
+	// 找 "4:info" 标记
+	idx := bytes.Index(data, []byte("4:info"))
+	if idx < 0 {
+		return "", fmt.Errorf("未找到 info 标记")
+	}
+
+	// info 字典开始位置（'d' 字符）
+	infoStart := idx + 6
+	if infoStart >= len(data) || data[infoStart] != 'd' {
+		return "", fmt.Errorf("info 字典格式错误")
+	}
+
+	// 找匹配的结束位置
+	infoEnd := findBencodeDictEnd(data, infoStart)
+	if infoEnd < 0 {
+		return "", fmt.Errorf("无法找到 info 字典结束位置")
+	}
+
+	// 计算 SHA1
+	h := sha1.Sum(data[infoStart : infoEnd+1])
+	return hex.EncodeToString(h[:]), nil
+}
+
+// findBencodeDictEnd 找与起始 'd' 匹配的 'e' 位置。
+// 正确处理 bencode 的字典、列表、整数和字符串。
+func findBencodeDictEnd(data []byte, start int) int {
+	if start >= len(data) || data[start] != 'd' {
+		return -1
+	}
+	i := start + 1
+	for i < len(data) {
+		ch := data[i]
+		switch {
+		case ch == 'd': // 嵌套字典
+			end := findBencodeDictEnd(data, i)
+			if end < 0 {
+				return -1
+			}
+			i = end + 1
+		case ch == 'l': // 列表
+			end := findBencodeListEnd(data, i)
+			if end < 0 {
+				return -1
+			}
+			i = end + 1
+		case ch == 'i': // 整数 i...e
+			eIdx := bytes.IndexByte(data[i+1:], 'e')
+			if eIdx < 0 {
+				return -1
+			}
+			i += eIdx + 2
+		case ch >= '0' && ch <= '9': // 字符串 len:data
+			colonIdx := bytes.IndexByte(data[i:], ':')
+			if colonIdx < 0 {
+				return -1
+			}
+			length := 0
+			for k := i; k < i+colonIdx; k++ {
+				length = length*10 + int(data[k]-'0')
+			}
+			i += colonIdx + 1 + length
+		case ch == 'e': // 字典结束
+			return i
+		default:
+			i++
+		}
+	}
+	return -1
+}
+
+// findBencodeListEnd 找与起始 'l' 匹配的 'e' 位置。
+func findBencodeListEnd(data []byte, start int) int {
+	if start >= len(data) || data[start] != 'l' {
+		return -1
+	}
+	i := start + 1
+	for i < len(data) {
+		ch := data[i]
+		switch {
+		case ch == 'd':
+			end := findBencodeDictEnd(data, i)
+			if end < 0 {
+				return -1
+			}
+			i = end + 1
+		case ch == 'l':
+			end := findBencodeListEnd(data, i)
+			if end < 0 {
+				return -1
+			}
+			i = end + 1
+		case ch == 'i':
+			eIdx := bytes.IndexByte(data[i+1:], 'e')
+			if eIdx < 0 {
+				return -1
+			}
+			i += eIdx + 2
+		case ch >= '0' && ch <= '9':
+			colonIdx := bytes.IndexByte(data[i:], ':')
+			if colonIdx < 0 {
+				return -1
+			}
+			length := 0
+			for k := i; k < i+colonIdx; k++ {
+				length = length*10 + int(data[k]-'0')
+			}
+			i += colonIdx + 1 + length
+		case ch == 'e':
+			return i
+		default:
+			i++
+		}
+	}
+	return -1
 }

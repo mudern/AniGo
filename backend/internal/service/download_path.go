@@ -86,6 +86,9 @@ func GetDownloadPath(cfg *domain.Config, ani *domain.Ani, resolve func(ani *doma
 	tmpl = strings.ReplaceAll(tmpl, "${bgmId}", bgmID)
 	tmpl = strings.ReplaceAll(tmpl, "${jpTitle}", jpTitle)
 
+	// baseDownloadPath 来自配置
+	tmpl = strings.ReplaceAll(tmpl, "${baseDownloadPath}", cfg.BaseDownloadPath)
+
 	return cleanPath(tmpl)
 }
 
