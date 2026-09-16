@@ -91,9 +91,6 @@ func (s *Server) register() {
 	r.POST("/api/playList", s.handlePlayList)
 	r.GET("/api/file", s.handleFileProxy)
 
-	// AI
-	r.POST("/api/aiPing", s.handleAIPing)
-
 	// 元数据
 	r.POST("/api/searchBgm", s.handleSearchBgm)
 	r.POST("/api/rssToAni", s.handleRssToAni)
@@ -139,7 +136,6 @@ func (s *Server) handleSetConfig(c *gin.Context) {
 		fail(c, err.Error())
 		return
 	}
-	s.rss.ReloadAI()
 	s.meta.Reload()
 	s.logs.Reload(s.cfg.Dir(), s.cfg.Get())
 	okMsg(c, "修改成功")
@@ -168,16 +164,6 @@ func (s *Server) handleCustomCss(c *gin.Context) {
 	c.Header("Content-Type", "text/css; charset=utf-8")
 	c.Header("Cache-Control", "no-store")
 	c.String(http.StatusOK, css)
-}
-
-// handleAIPing 测试 AI 连通性与密钥。
-func (s *Server) handleAIPing(c *gin.Context) {
-	reply, err := s.rss.AIPing(c.Request.Context())
-	if err != nil {
-		fail(c, err.Error())
-		return
-	}
-	ok(c, map[string]string{"reply": reply})
 }
 
 // handleExportConfig 下载配置备份 zip。
