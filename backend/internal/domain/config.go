@@ -155,16 +155,9 @@ type Config struct {
 	AllowCors                      bool                  `json:"allowCors"`
 	UUID                           string                `json:"uuid"`
 	// BgmRefreshHours BGM 元数据后台刷新周期（小时）。
-	BgmRefreshHours                int                   `json:"bgmRefreshHours"`
-	// AI 设置：用云端大模型解析/过滤 RSS 标题
-	AiEnabled   bool   `json:"aiEnabled"`
-	AiProvider  string `json:"aiProvider"`
-	AiApiKey    string `json:"aiApiKey"`
-	AiBaseURL   string `json:"aiBaseURL"`
-	AiModel     string `json:"aiModel"`
-	AiPrompt    string `json:"aiPrompt"`
-	// AiSubtitleSC 是否仅保留含简体中文字幕的资源（简中或简中双语视为满足）。
-	AiSubtitleSC bool `json:"aiSubtitleSC"`
+	BgmRefreshHours int `json:"bgmRefreshHours"`
+	// BaseDownloadPath 115 下载的基础目录，如 "番剧"
+	BaseDownloadPath string `json:"baseDownloadPath"`
 }
 
 // renameRegStr 是遗留的剧集提取正则，保留作为 customEpisodeStr 的默认值以兼容配置。
@@ -211,8 +204,9 @@ func DefaultConfig() *Config {
 		DownloadToolType:            "115",
 		Pan115Cookie:                "",
 		DownloadRetry:               3,
-		DownloadPathTemplate:        "番剧/${title}/Season ${season}",
-		OvaDownloadPathTemplate:     "剧场版/${title}",
+		DownloadPathTemplate:        "${baseDownloadPath}/${title}",
+		OvaDownloadPathTemplate:     "${baseDownloadPath}/剧场版/${title}",
+		RenameTemplate:              "${title} E${episodeFormat}",
 		RssSleepMinutes:             15,
 		Rename:                      true,
 		Rss:                         true,
@@ -238,13 +232,7 @@ func DefaultConfig() *Config {
 		ReverseProxyTrustIpList:     []string{"127.0.0.1"},
 		BgmApi:                      "https://api.bgm.tv",
 		BgmRefreshHours:             6,
-		AiEnabled:                   true,
-		AiProvider:                  "deepseek",
-		AiApiKey:                    "",
-		AiBaseURL:                   "https://api.deepseek.com",
-		AiModel:                     "deepseek-v4-flash",
-		AiPrompt:                    defaultAiPrompt,
-		AiSubtitleSC:                true,
+		BaseDownloadPath:            "番剧",
 		NotificationTemplate:        defaultNotificationTemplate,
 	}
 }
