@@ -6,9 +6,7 @@ import LoginPage from './pages/LoginPage'
 import { api } from './api/client'
 
 const HomePage = lazy(() => import('./pages/HomePage'))
-const GardenPage = lazy(() => import('./pages/GardenPage'))
 const SettingsPage = lazy(() => import('./pages/SettingsPage'))
-const LogsPage = lazy(() => import('./pages/LogsPage'))
 
 const { Content } = Layout
 
@@ -28,7 +26,6 @@ export default function App() {
   )
 }
 
-// AuthShell 挂载时探测登录态，未登录仅渲染登录页。
 function AuthShell() {
   const [authed, setAuthed] = useState<boolean | null>(null)
 
@@ -47,7 +44,6 @@ function AuthShell() {
     }
   }, [])
 
-  // 会话过期（任意请求收到 401）时立即退出登录态，避免登录页跳转死循环。
   useEffect(() => {
     const onUnauthorized = () => setAuthed(false)
     window.addEventListener('anigo:unauthorized', onUnauthorized)
@@ -82,9 +78,7 @@ function AuthShell() {
               <Route path="/" element={<Navigate to="/home" replace />} />
               <Route path="/login" element={<Navigate to="/home" replace />} />
               <Route path="/home" element={<HomePage />} />
-              <Route path="/garden" element={<GardenPage />} />
               <Route path="/settings" element={<SettingsPage />} />
-              <Route path="/logs" element={<LogsPage />} />
             </Routes>
           </Suspense>
         </Content>

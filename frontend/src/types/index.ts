@@ -23,36 +23,6 @@ export interface CheckLoginResp {
   login: boolean
 }
 
-export interface NotificationConfig {
-  enable: boolean
-  retry: number
-  comment: string
-  notificationTemplate: string
-  notificationType: string
-  serverChanType: string
-  serverChanSendKey: string
-  serverChan3ApiUrl: string
-  telegramBotToken: string
-  telegramChatId: string
-  telegramTopicId: number
-  telegramApiHost: string
-  telegramImage: boolean
-  telegramFormat: string
-  webHookMethod: string
-  webHookUrl: string
-  webHookHeader: string
-  webHookBody: string
-  shell: string
-  barkServerUrl: string
-  barkDeviceKeys: string
-  barkGroup: string
-  barkUseMarkdown: boolean
-  barkLevel: string
-  barkVolume: number
-  statusList: string[]
-  sort: number
-}
-
 export interface Config {
   downloadToolType: string
   downloadRetry: number
@@ -117,15 +87,38 @@ export interface Config {
   bgmApi: string
   allowCors: boolean
   uuid: string
-  // BGM 元数据后台刷新周期（小时）
   bgmRefreshHours: number
-  // AI 设置
-  aiEnabled: boolean
-  aiProvider: string
-  aiApiKey: string
-  aiBaseURL: string
-  aiModel: string
-  aiSubtitleSC: boolean
+  baseDownloadPath: string
+}
+
+export interface NotificationConfig {
+  enable: boolean
+  retry: number
+  comment: string
+  notificationTemplate: string
+  notificationType: string
+  serverChanType: string
+  serverChanSendKey: string
+  serverChan3ApiUrl: string
+  telegramBotToken: string
+  telegramChatId: string
+  telegramTopicId: number
+  telegramApiHost: string
+  telegramImage: boolean
+  telegramFormat: string
+  webHookMethod: string
+  webHookUrl: string
+  webHookHeader: string
+  webHookBody: string
+  shell: string
+  barkServerUrl: string
+  barkDeviceKeys: string
+  barkGroup: string
+  barkUseMarkdown: boolean
+  barkLevel: string
+  barkVolume: number
+  statusList: string[]
+  sort: number
 }
 
 export interface Ani {
@@ -189,6 +182,11 @@ export interface Item {
   hasDownloaded: boolean
   master: boolean
   subgroup: string
+  resolution: string
+  videoCodec: string
+  source: string
+  subtitleLang: string
+  subtitleEmbed: string
   pubDate: string
 }
 
@@ -196,86 +194,4 @@ export interface PreviewAniData {
   downloadPath: string
   items: Item[]
   omitList: number[]
-}
-
-export interface GardenSubject {
-  id: string
-  name: string
-  cover: string
-  weekLabel: string
-  exists: boolean
-}
-
-export interface GardenWeek {
-  weekLabel: string
-  subjects: GardenSubject[]
-}
-
-export interface GardenGroup {
-  id: string
-  name: string
-  rss: string
-  bgmId: string
-  lastUpdatedAt: string
-  items: GardenItem[]
-}
-
-export interface GardenItem {
-  id: string
-  provider: string
-  providerId: string
-  title: string
-  href: string
-  type: string
-  magnet: string
-  size: number
-  formatSize: string
-  createdAt: string
-  fetchedAt: string
-  subjectId: string
-}
-
-export interface LoginStatus {
-  configured: boolean
-  loginOK: boolean
-  message: string
-}
-
-export interface PlayItem {
-  episode: number
-  filename: string
-  pickCode: string
-}
-
-export interface BgmInfo {
-  id: string
-  name: string
-  nameCn: string
-  eps: number
-  season: number
-  rating: { rank: number; score: number; total: number }
-  images: { small: string; large: string; medium: string }
-}
-
-export interface RssToAniDTO {
-  url: string
-  type: string
-  bgmUrl?: string
-  subgroup?: string
-  enable?: boolean
-}
-
-export interface LogEntry {
-  message: string
-  level: string
-  loggerName: string
-  threadName: string
-}
-
-export interface ServiceStatus {
-  ai: { configured: boolean; ok: boolean; reply: string; message: string }
-  cloud: { configured: boolean; loginOK: boolean; message: string }
-  memory: { allocMB: number; totalAllocMB: number; sysMB: number; numGC: number }
-  cache: { count: number; bytes: number; sizeKB: number }
-  uptimeSeconds: number
 }

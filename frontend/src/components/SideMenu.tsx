@@ -2,9 +2,7 @@ import { useNavigate, useLocation } from 'react-router-dom'
 import { Layout, Menu } from 'antd'
 import {
   HomeOutlined,
-  RocketOutlined,
   SettingOutlined,
-  FileTextOutlined,
 } from '@ant-design/icons'
 
 const { Sider } = Layout
@@ -34,9 +32,7 @@ export default function SideMenu() {
         selectedKeys={[selected]}
         style={{ background: '#fff', borderInlineEnd: 'none' }}
         items={[
-          { key: '/home', icon: <HomeOutlined />, label: '我的订阅' },
-          { key: '/garden', icon: <RocketOutlined />, label: '番剧源' },
-          { key: '/logs', icon: <FileTextOutlined />, label: '日志' },
+          { key: '/home', icon: <HomeOutlined />, label: '订阅' },
           { key: '/settings', icon: <SettingOutlined />, label: '设置' },
         ]}
         onClick={({ key }) => nav(key)}

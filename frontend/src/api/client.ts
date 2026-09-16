@@ -1,12 +1,7 @@
 import type { Result } from '../types'
 
-// 后端统一返回 {code, message, data, t}
 const BASE = ''
-
-// 默认请求超时（毫秒），避免后端接口卡住时 UI 无限等待。
 const DEFAULT_TIMEOUT = 30_000
-
-// localStorage 中保存登录 token 的键名。
 const TOKEN_KEY = 'anigo_token'
 
 export function getToken(): string {
@@ -21,9 +16,6 @@ export function clearToken() {
   localStorage.removeItem(TOKEN_KEY)
 }
 
-// 401 时清空凭证并通知 App 进入未登录态（渲染登录页）。
-// 不直接改 hash：App 未登录分支对任意路由都渲染登录页，
-// 避免"登录页 → 重定向回首页 → 再次 401"的跳转死循环。
 function handleUnauthorized() {
   clearToken()
   window.dispatchEvent(new Event('anigo:unauthorized'))
@@ -98,39 +90,10 @@ export const api = {
     request<null>('POST', `/api/batchEnable?value=${value}`, ids),
   previewAni: (ani: Partial<import('../types').Ani>) =>
     request<import('../types').PreviewAniData>('POST', '/api/previewAni', ani),
-  downloadPath: (ani: Partial<import('../types').Ani>) =>
-    request<{ downloadPath: string }>('POST', '/api/downloadPath', ani),
   refreshAll: () => request<null>('POST', '/api/refreshAll'),
   refreshAni: (id: string) => request<null>('POST', '/api/refreshAni', { id }),
-  rssToAni: (dto: import('../types').RssToAniDTO) =>
-    request<import('../types').Ani>('POST', '/api/rssToAni', dto),
 
   // 下载
-  downloadStatus: () => request<import('../types').LoginStatus>('POST', '/api/downloadStatus'),
   downloadLoginTest: (cookie?: string) =>
     request<null>('POST', '/api/downloadLoginTest', cookie ? { pan115Cookie: cookie } : {}),
-  playList: (id: string) =>
-    request<import('../types').PlayItem[]>('POST', '/api/playList', { id }),
-
-  // AI
-  aiPing: () => request<{ reply: string }>('POST', '/api/aiPing'),
-
-  // 元数据
-  searchBgm: (text: string) =>
-    request<import('../types').BgmInfo[]>('POST', '/api/searchBgm', { text }),
-  gardenList: () =>
-    request<import('../types').GardenWeek[]>('POST', '/api/gardenList'),
-  gardenGroup: (subject: string) =>
-    request<import('../types').GardenGroup[]>('POST', `/api/gardenGroup?subject=${subject}`),
-
-  // 通知
-  testNotification: (nc: import('../types').NotificationConfig) =>
-    request<null>('POST', '/api/testNotification', nc),
-
-  // 日志
-  getLogs: () => request<import('../types').LogEntry[]>('POST', '/api/logs'),
-  clearLogs: () => request<null>('POST', '/api/clearLogs'),
-
-  // 状态
-  getStatus: () => request<import('../types').ServiceStatus>('POST', '/api/status'),
 }
