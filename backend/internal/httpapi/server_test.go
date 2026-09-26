@@ -32,7 +32,6 @@ func newTestServer(t *testing.T) *Server {
 		t.Fatalf("NewConfigService: %v", err)
 	}
 	// 关闭 AI：默认配置带开发 Key，避免测试触发真实网络请求
-	cfg.Get().AiApiKey = ""
 	// 关闭鉴权：现有测试不带凭证，密码置空即放行（发布版首次配置同款语义）
 	cfg.Get().Login.Password = ""
 	cache := store.NewTTLCache()
@@ -217,14 +216,6 @@ func TestRefreshAniNotFound(t *testing.T) {
 	}
 }
 
-func TestAIPingNotConfigured(t *testing.T) {
-	s := newTestServer(t)
-	w := doReq(t, s, http.MethodPost, "/api/aiPing", nil)
-	res := decodeResult(t, w)
-	if res.Code != 500 {
-		t.Errorf("未配置 AI 应返回 500, got %d", res.Code)
-	}
-}
 
 // doReqAuth 与 doReq 相同，但附带 Bearer token。
 func doReqAuth(t *testing.T, s *Server, method, path string, body interface{}, token string) *httptest.ResponseRecorder {

@@ -3,6 +3,7 @@ import { Layout, Menu } from 'antd'
 import {
   HomeOutlined,
   SettingOutlined,
+  UnorderedListOutlined,
 } from '@ant-design/icons'
 
 const { Sider } = Layout
@@ -33,6 +34,7 @@ export default function SideMenu() {
         style={{ background: '#fff', borderInlineEnd: 'none' }}
         items={[
           { key: '/home', icon: <HomeOutlined />, label: '订阅' },
+          { key: '/records', icon: <UnorderedListOutlined />, label: '下载记录' },
           { key: '/settings', icon: <SettingOutlined />, label: '设置' },
         ]}
         onClick={({ key }) => nav(key)}

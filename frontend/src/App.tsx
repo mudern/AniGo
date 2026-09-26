@@ -7,6 +7,7 @@ import { api } from './api/client'
 
 const HomePage = lazy(() => import('./pages/HomePage'))
 const SettingsPage = lazy(() => import('./pages/SettingsPage'))
+const RecordsPage = lazy(() => import('./pages/RecordsPage'))
 
 const { Content } = Layout
 
@@ -78,6 +79,7 @@ function AuthShell() {
               <Route path="/" element={<Navigate to="/home" replace />} />
               <Route path="/login" element={<Navigate to="/home" replace />} />
               <Route path="/home" element={<HomePage />} />
+              <Route path="/records" element={<RecordsPage />} />
               <Route path="/settings" element={<SettingsPage />} />
             </Routes>
           </Suspense>

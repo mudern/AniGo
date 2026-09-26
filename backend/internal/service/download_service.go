@@ -52,7 +52,9 @@ var SeasonEpisodeRe = regSeasonEp
 
 // NewDownloadService 创建下载服务。
 func NewDownloadService(cfg *ConfigService, rss *RssService, cloud CloudProvider, cache domain.Cache, meta *MetadataService, notify *NotifyService, logger *log.Logger) *DownloadService {
-	return &DownloadService{cfg: cfg, rss: rss, cloud: cloud, cache: cache, meta: meta, notify: notify, logger: logger, playCache: map[string]*playCacheEntry{}}
+	s := &DownloadService{cfg: cfg, rss: rss, cloud: cloud, cache: cache, meta: meta, notify: notify, logger: logger, playCache: map[string]*playCacheEntry{}}
+	LoadRecords(cache)
+	return s
 }
 
 // pathResolve 返回下载路径的 bgmId/jpTitle 解析回调。
@@ -141,6 +143,11 @@ func (s *DownloadService) downloadAni(ctx context.Context, ani *domain.Ani, chec
 				msg = "未知原因"
 			}
 			s.logf("WARN", "download", "%s 下载客户端登录失败, 跳过: %s", ani.Title, msg)
+			AddRecord(&DownloadRecord{
+				Time: domain.NowMillis(), AniID: ani.ID, Title: ani.Title,
+				Name: "—", Status: "error", Message: "网盘登录失败, 本轮跳过: " + msg,
+			})
+			PersistRecords(s.cache)
 			return
 		}
 	}
@@ -233,13 +240,28 @@ func (s *DownloadService) downloadAni(ctx context.Context, ani *domain.Ani, chec
 			magnet, convErr = torrentToMagnet(magnet, cfg)
 			if convErr != nil {
 				s.logf("ERROR", "download", "%s 转换磁力失败: %v", reName, convErr)
+				AddRecord(&DownloadRecord{
+					Time: domain.NowMillis(), AniID: ani.ID, Title: ani.Title, Name: reName,
+					Subgroup: item.Subgroup, Status: "error", Message: "种子转磁力失败: " + convErr.Error(),
+				})
+				PersistRecords(s.cache)
 				continue
 			}
 		}
 		if err := driver.AddOfflineTask(ctx, cfg, magnet, savePath+"/"+reName); err != nil {
 			s.logf("ERROR", "download", "%s 添加下载失败: %v", reName, err)
+			AddRecord(&DownloadRecord{
+				Time: domain.NowMillis(), AniID: ani.ID, Title: ani.Title, Name: reName,
+				Subgroup: item.Subgroup, Status: "error", Message: "提交离线下载失败: " + err.Error(),
+			})
+			PersistRecords(s.cache)
 			continue
 		}
+		AddRecord(&DownloadRecord{
+			Time: domain.NowMillis(), AniID: ani.ID, Title: ani.Title, Name: reName,
+			Episode: epDesc(item.Episode), Subgroup: item.Subgroup, Status: "success",
+		})
+		PersistRecords(s.cache)
 		s.logf("INFO", "download", "添加下载 %s → %s", reName, savePath)
 		s.cache.Put("hash:"+hash, reName, 24*time.Hour)
 		ani.Downloaded = append(ani.Downloaded, episode)

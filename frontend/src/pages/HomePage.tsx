@@ -138,8 +138,7 @@ export default function HomePage() {
                     </Tag>
                   </div>
                   <Text type="secondary" style={{ fontSize: 12 }}>
-                    已下载 {ani.downloadedEps || ani.currentEpisodeNumber} / 共 {ani.totalEpisodeNumber || '?'} 集
-                    {ani.subgroup && ` · ${ani.subgroup}`}
+                    {ani.subgroup || ''}
                   </Text>
                 </div>
                 <Space>

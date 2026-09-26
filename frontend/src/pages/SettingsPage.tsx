@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Form, Input, InputNumber, Button, message, Space, Select, Card, Upload, Switch } from 'antd'
-import { DownloadOutlined, UploadOutlined } from '@ant-design/icons'
+import { DownloadOutlined, UploadOutlined, QrcodeOutlined } from '@ant-design/icons'
+import QRLoginModal from '../components/QRLoginModal'
 import { api } from '../api/client'
 import type { Config } from '../types'
 
@@ -10,6 +11,7 @@ export default function SettingsPage() {
   const queryClient = useQueryClient()
   const [form] = Form.useForm<Config>()
   const [saving, setSaving] = useState(false)
+  const [qrOpen, setQrOpen] = useState(false)
 
   useEffect(() => {
     if (cfg) form.setFieldsValue(cfg)
@@ -26,6 +28,11 @@ export default function SettingsPage() {
     } finally {
       setSaving(false)
     }
+  }
+
+  const handleQRSuccess = async () => {
+    await queryClient.invalidateQueries({ queryKey: ['config'] })
+    message.success('115 扫码登录成功，Cookie 已保存')
   }
 
   const handle115Test = async () => {
@@ -80,6 +87,7 @@ export default function SettingsPage() {
   }
 
   return (
+    <>
     <div style={{ maxWidth: 600 }}>
       <Form form={form} layout="vertical">
         {/* 115 设置 */}
@@ -97,6 +105,7 @@ export default function SettingsPage() {
             <Input placeholder="${title} S${seasonFormat}E${episodeFormat}" />
           </Form.Item>
           <Space>
+            <Button icon={<QrcodeOutlined />} onClick={() => setQrOpen(true)}>扫码登录</Button>
             <Button onClick={handle115Test}>测试 115 登录</Button>
             <Button type="primary" onClick={handleSave} loading={saving}>
               保存
@@ -181,5 +190,7 @@ export default function SettingsPage() {
         </Card>
       </Form>
     </div>
+    <QRLoginModal open={qrOpen} onClose={() => setQrOpen(false)} onSuccess={handleQRSuccess} />
+    </>
   )
 }

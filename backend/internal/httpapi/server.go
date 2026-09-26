@@ -11,6 +11,7 @@ import (
 	"github.com/greenhats/anigo/internal/domain"
 	"github.com/greenhats/anigo/internal/service"
 )
+
 // Server 是 Gin HTTP 应用服务。
 type Server struct {
 	engine   *gin.Engine
@@ -90,6 +91,14 @@ func (s *Server) register() {
 	r.POST("/api/deleteTorrent", s.handleDeleteTorrent)
 	r.POST("/api/playList", s.handlePlayList)
 	r.GET("/api/file", s.handleFileProxy)
+
+	// 下载记录
+	r.POST("/api/downloadRecords", s.handleDownloadRecords)
+
+	// 115 扫码登录
+	r.POST("/api/qrCreate", s.handleQRCreate)
+	r.POST("/api/qrStatus", s.handleQRStatus)
+	r.POST("/api/qrCancel", s.handleQRCancel)
 
 	// 元数据
 	r.POST("/api/searchBgm", s.handleSearchBgm)

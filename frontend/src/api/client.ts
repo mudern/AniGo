@@ -54,6 +54,28 @@ async function request<T>(method: string, url: string, body?: unknown, timeoutMs
   }
 }
 
+// 115 扫码登录
+export interface QRCreateResp {
+  qrText: string
+}
+export interface DownloadRecord {
+  time: number
+  aniId: string
+  title: string
+  name: string
+  episode: string
+  subgroup: string
+  status: 'success' | 'error'
+  message: string
+}
+export interface DownloadRecordsResp {
+  records: DownloadRecord[]
+}
+
+export interface QRStatusResp {
+  status: 'waiting' | 'scanned' | 'confirmed' | 'expired' | 'canceled' | 'error'
+}
+
 export const api = {
   ping: () => request<null>('GET', '/api/ping'),
 
@@ -96,4 +118,8 @@ export const api = {
   // 下载
   downloadLoginTest: (cookie?: string) =>
     request<null>('POST', '/api/downloadLoginTest', cookie ? { pan115Cookie: cookie } : {}),
+  downloadRecords: () => request<DownloadRecordsResp>('POST', '/api/downloadRecords', {}),
+  qrCreate: () => request<QRCreateResp>('POST', '/api/qrCreate', {}),
+  qrStatus: (timeoutMs = DEFAULT_TIMEOUT) => request<QRStatusResp>('POST', '/api/qrStatus', {}, timeoutMs),
+  qrCancel: () => request<null>('POST', '/api/qrCancel', {}),
 }

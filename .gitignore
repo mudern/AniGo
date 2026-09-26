@@ -20,4 +20,4 @@ frontend/tsconfig.tsbuildinfo
 backend/internal/httpapi/static/
 
 # 测试临时文件
-/tmp/anigo-test
+/tmp/anigo-testanigo
